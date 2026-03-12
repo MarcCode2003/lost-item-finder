@@ -24,3 +24,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* New added code as of March 12, 2026*/
+input, textarea, select {
+  color: #111827;
+  background: #ffffff;
+}
