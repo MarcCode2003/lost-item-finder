@@ -14,6 +14,9 @@ export default function Navbar() {
           <Link href="/found" className="text-gray-600 hover:text-blue-600 font-medium transition">
             Report Found
           </Link>
+          <Link href="/browse" className="text-gray-600 hover:text-blue-600 font-medium transition">
+            Browse Items
+          </Link>
         </div>
       </div>
     </nav>
