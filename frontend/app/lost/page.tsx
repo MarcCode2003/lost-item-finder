@@ -4,64 +4,77 @@ import { useState } from "react";
 import { supabase } from "../../lib/supabase";
 
 export default function ReportLostItem() {
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLoading(true);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const imageFile = formData.get('image') as File;
+    const form = e.currentTarget;
 
-    let imageUrl = null;
+    try {
+      // --- 1. GRAB ALL THE DATA FROM THE FORM ---
+      const formData = new FormData(e.currentTarget);
+      const itemName = formData.get("itemName") as string;
+      const description = formData.get("description") as string;
+      const location = formData.get("location") as string;
+      const date = formData.get("date") as string;
+      const file = formData.get("image") as File;
 
-    // 1. If the user selected an image, upload it to Cloudinary first
-    if (imageFile && imageFile.size > 0) {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-      const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-
-      const cloudinaryData = new FormData();
-      cloudinaryData.append("file", imageFile);
-      cloudinaryData.append("upload_preset", uploadPreset as string);
-
-      try {
-        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-          method: "POST",
-          body: cloudinaryData,
-        });
-        const uploadJson = await uploadRes.json();
-        imageUrl = uploadJson.secure_url; // This is the live web link to your image!
-      } catch (error) {
-        console.error("Image upload failed", error);
-        alert("Failed to upload image. Please try again.");
-        setLoading(false);
+      if (!file || file.size === 0) {
+        alert("Please upload an image so the AI can scan it!");
+        setIsSubmitting(false);
         return;
       }
-    }
-    
-    // 2. Now save everything (including the new image URL) to Supabase
-    const { error } = await supabase
-      .from('lost_items')
-      .insert([
-        {
-          item_name: formData.get('itemName'),
-          description: formData.get('description'),
-          location_lost: formData.get('location'),
-          date_lost: formData.get('date'),
-          image_url: imageUrl, // Saving the Cloudinary link here!
-        }
-      ]);
 
-    setLoading(false);
+      // --- 2. UPLOAD TO CLOUDINARY ---
+      const cloudinaryData = new FormData();
+      cloudinaryData.append("file", file);
+      cloudinaryData.append("upload_preset", "lost_items_preset"); 
+      
+      const cloudRes = await fetch("https://api.cloudinary.com/v1_1/dnkxdaggs/image/upload", {
+        method: "POST",
+        body: cloudinaryData,
+      });
+      const cloudJson = await cloudRes.json();
+      const imageUrl = cloudJson.secure_url;
 
-    if (error) {
-      alert("Error saving data: " + error.message);
-    } else {
-      alert("Success! Your lost item (and photo) has been reported.");
-      form.reset();
+      // --- 3. THE AI INTERCEPT: SEND TO PYTHON ---
+      const aiResponse = await fetch("http://localhost:8000/extract-features", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_url: imageUrl })
+      });
+      
+      const aiData = await aiResponse.json();
+      const features = aiData.features; 
+
+      // --- 4. SAVE TO SUPABASE ---
+      const { error } = await supabase
+        .from('lost_items')
+        .insert([
+          {
+            item_name: itemName,
+            description: description,
+            location_lost: location,
+            date_lost: date,
+            image_url: imageUrl,
+            image_features: features 
+          }
+        ]);
+
+      if (error) throw error;
+      
+      alert("Item reported successfully!");
+      form.reset(); // This clears the form boxes after a success!
+
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Something went wrong.");
+    } finally {
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <main className="max-w-2xl mx-auto p-6 mt-10 bg-white rounded-xl shadow-sm border border-gray-200">
@@ -116,23 +129,23 @@ export default function ReportLostItem() {
           </div>
         </div>
 
-        {/* IMAGE UPLOAD UNLOCKED */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Upload Photo</label>
           <input 
             type="file" 
             name="image"
             accept="image/*"
+            required
             className="w-full border border-gray-300 rounded-lg p-2 text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
           />
         </div>
 
         <button 
           type="submit" 
-          disabled={loading}
-          className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-blue-700 transition mt-4 disabled:bg-blue-300 cursor-pointer"
+          disabled={isSubmitting}
+          className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-blue-700 transition mt-4 disabled:bg-blue-300 disabled:cursor-not-allowed cursor-pointer"
         >
-          {loading ? "Uploading & Saving..." : "Submit Lost Item Report"}
+          {isSubmitting ? "Processing AI & Saving..." : "Submit Lost Item Report"}
         </button>
       </form>
     </main>
