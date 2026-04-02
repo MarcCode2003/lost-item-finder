@@ -204,9 +204,12 @@ export default function ReportFoundItem() {
                       </span>
                     </div>
                     <p className="text-gray-600 text-sm">{match.description}</p>
-                    <button className="w-full mt-4 bg-blue-50 text-blue-600 font-semibold py-2 rounded-md hover:bg-blue-100 transition">
+                    <a 
+                      href={`mailto:demo-owner@example.com?subject=I found your ${match.item_name}!&body=Hi, I matched with your ${match.item_name} on the Lost Item Finder app. Let's coordinate how to get it back to you!`}
+                      className="w-full mt-4 bg-blue-50 text-blue-600 font-semibold py-2 rounded-md hover:bg-blue-100 transition block text-center"
+                    >
                       Contact Owner
-                    </button>
+                    </a>
                   </div>
                 </div>
               ))}
