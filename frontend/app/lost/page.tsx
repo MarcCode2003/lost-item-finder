@@ -40,7 +40,7 @@ export default function ReportLostItem() {
       const imageUrl = cloudJson.secure_url;
 
       // --- 3. THE AI INTERCEPT: SEND TO PYTHON ---
-      const aiResponse = await fetch("http://localhost:8000/extract-features", {
+      const aiResponse = await fetch("https://lost-item-finder-ch8j.onrender.com/extract-features", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image_url: imageUrl })

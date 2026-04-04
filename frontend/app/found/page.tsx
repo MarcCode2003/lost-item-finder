@@ -59,7 +59,7 @@ export default function ReportFoundItem() {
     
     try {
       // --- 2. GET AI NUMBERS FROM PYTHON ---
-      const aiResponse = await fetch("http://localhost:8000/extract-features", {
+      const aiResponse = await fetch("https://lost-item-finder-ch8j.onrender.com/extract-features", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image_url: imageUrl })
