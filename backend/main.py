@@ -8,11 +8,7 @@ app = FastAPI()
 # 1. Unlock CORS so Next.js can talk to this server
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", 
-        "https://lost-item-finder-pi.vercel.app", # <--- ADDED THIS
-        "*" # <--- ADDED THIS as a backup (allows all)
-    ],
+    allow_origins=["*"],  # The asterisk means "Allow ALL websites"
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
