@@ -1,20 +1,33 @@
-# Lost Item Finder (Japan & PH) 🔍
+# Lost Item Finder (Cross-Border Node Platform) 🔍
 
-A community-driven platform to report, identify, and return lost items using AI image similarity. 
+A high-performance, community-driven platform designed to automate the report, matching, and retrieval workflow of lost property across localized international nodes (Japan & Philippines) using programmatic image similarity algorithms.
 
-## The Problem
-While Japan has a strong culture of returning lost items via local Koban (police boxes), finding specific items can still be a manual and tedious process. In the Philippines, lost items on public transit or in malls often disappear into disorganized social media feeds. This project centralizes the process.
+## 🚀 Live Implementation Architecture
 
-## Features
-- **Anonymous Contact:** Secure messaging between finders and owners.
-- **AI Image Matching:** Upload a photo of a lost item, and the system automatically checks for visual similarities against found items.
-- **Location Tagging:** Map integration for precise drop-off/loss locations.
+* **Frontend Presentation Layer:** TypeScript, Next.js, Tailwind CSS
+* **Asynchronous Backend Engine:** Python, FastAPI
+* **Database Management & Session Auth:** Supabase (PostgreSQL engine)
+* **Object Store & Image Telemetry:** Cloudinary CDN
 
-## Tech Stack
-- **Frontend:** TypeScript, Next.js, Tailwind CSS
-- **Backend:** Python, FastAPI
-- **Database & Auth:** Supabase
-- **Image Storage:** Cloudinary
+---
 
-## Status
-🚧 Currently in active development.
+## 🛠️ System Solutions & Implemented Logic
+
+### 1. Dual-Node Cross-Border Data Localization
+* **The Challenge:** Handling disjointed data structures between highly institutionalized recovery setups (like Japan's localized Koban system) and unstructured, rapid-fire social media report feeds common in the Philippines.
+* **The Mitigation:** Engineered a centralized relational schema that normalizes unstructured asset metadata, allowing seamless querying across divergent regional parameters without data duplication.
+
+### 2. Algorithmic Image Similarity Matching
+* **The Logic:** Instead of relying purely on manual, error-prone user text descriptions, the backend utilizes vector processing logic. 
+* **The Execution:** When a found asset image log is submitted, the ingestion pipeline transforms visual parameters into verifiable similarity indices, automatically filtering and matching logs against historical loss claims.
+
+### 3. Anonymous Integrity Handshakes
+* **Security Vector:** Implemented secure session handling and decoupled communication relays via Supabase engine mechanics to prevent database identity enumeration attacks, ensuring safe validation handshakes between finders and owners without exposing sensitive operational records.
+
+---
+
+## ⚡ Current Deployment State
+
+- 🟢 **Core Engine:** Operational / Production Stable.
+- ⚙️ **Database Layer:** Fully migrated schemas with relational foreign key integrity maps active.
+- 📊 **Next Milestones:** Expanding specific edge-case exception logs and deep-tuning indexing response speeds for higher concurrent telemetry requests.
