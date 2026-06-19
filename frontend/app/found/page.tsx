@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
 
-// Define what a "Match" looks like based on our SQL function
 type Match = {
   id: string;
   item_name: string;
@@ -20,7 +19,7 @@ export default function ReportFoundItem() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    setMatches([]); // Clear out any old searches
+    setMatches([]);
     setHasSearched(false);
 
     const form = event.currentTarget;
@@ -35,7 +34,6 @@ export default function ReportFoundItem() {
       return;
     }
 
-    // --- 1. CLOUDINARY UPLOAD (Your Code!) ---
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
@@ -58,7 +56,6 @@ export default function ReportFoundItem() {
     }
     
     try {
-      // --- 2. GET AI NUMBERS FROM PYTHON ---
       const aiResponse = await fetch("https://lost-item-finder-ch8j.onrender.com/extract-features", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -67,7 +64,6 @@ export default function ReportFoundItem() {
       const aiData = await aiResponse.json();
       const features = aiData.features;
 
-      // --- 3. SAVE TO FOUND_ITEMS (Your Code + Features!) ---
       const { error: insertError } = await supabase
         .from('found_items')
         .insert([
@@ -77,16 +73,15 @@ export default function ReportFoundItem() {
             location_found: formData.get('location'),
             date_found: formData.get('date'),
             image_url: imageUrl,
-            image_features: features // <-- Saving the AI numbers here!
+            image_features: features
           }
         ]);
 
       if (insertError) throw insertError;
 
-      // --- 4. THE MAGIC: ASK SUPABASE FOR MATCHES ---
       const { data: matchData, error: matchError } = await supabase.rpc('match_lost_items', {
         query_embedding: features,
-        match_threshold: 0.80, // <-- CHANGE THIS FROM 0.60 to 0.80 (or even 0.85!) currently at 80% or higher
+        match_threshold: 0.80,
         match_count: 3         
       });
 
@@ -102,111 +97,120 @@ export default function ReportFoundItem() {
       console.error("Error processing data:", error);
       alert("Something went wrong: " + error.message);
     } finally {
-      setLoading(false);
+      loading(false);
     }
   }
 
   return (
-    <main className="max-w-4xl mx-auto p-6 mt-10">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Report a Found Item</h1>
-        <p className="text-gray-600 mb-6">
-          Thank you for helping! Upload a clear photo so our AI can match it with lost reports.
-        </p>
-
-        {/* YOUR EXACT FORM CODE */}
-        <form onSubmit={handleSubmit} className="space-y-6 flex flex-col">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
-            <input 
-              type="text" 
-              name="itemName"
-              required
-              placeholder="e.g., Black Leather Wallet" 
-              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description & Distinguishing Features</label>
-            <textarea 
-              rows={4}
-              name="description"
-              required
-              placeholder="e.g., Found near the ticket booth. Has a blue keychain." 
-              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
-          </div>
-
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location Found</label>
-              <input 
-                type="text" 
-                name="location"
-                required
-                placeholder="e.g., LRT Line 1, Recto Station" 
-                className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date Found</label>
-              <input 
-                type="date" 
-                name="date"
-                required
-                className="w-full border border-gray-300 rounded-lg p-3 text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Upload Photo</label>
-            <input 
-              type="file" 
-              name="image"
-              accept="image/*"
-              required
-              className="w-full border border-gray-300 rounded-lg p-2 text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer"
-            />
-          </div>
-
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-green-700 transition mt-4 disabled:bg-green-300 cursor-pointer"
-          >
-            {loading ? "Scanning & Saving..." : "Submit Found Item Report"}
-          </button>
-        </form>
+    <main className="flex min-h-screen flex-col bg-zinc-950 text-zinc-200 p-6 md:p-12">
+      
+      <div className="mb-8 md:mb-10">
+        <h1 className="text-xl md:text-2xl font-bold text-white tracking-wide">Register Found Property</h1>
+        <p className="text-xs text-zinc-400 mt-1">Ingest retrieved item coordinates into the central system to scan for active loss matches.</p>
       </div>
 
-      {/* --- AI MATCH RESULTS UI --- */}
-      {hasSearched && (
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">AI Match Results</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-6xl items-start">
+        
+        <div className="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-lg p-6 shadow-none">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-wider text-zinc-500 mb-1.5">Item Name</label>
+              <input 
+                type="text" 
+                name="itemName"
+                required
+                placeholder="e.g., ThinkPad Carbon X1 Laptop" 
+                className="w-full text-sm px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-700 transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-wider text-zinc-500 mb-1.5">Description & Key Features</label>
+              <textarea 
+                rows={3}
+                name="description"
+                required
+                placeholder="Document distinct tags, wear marks, or specific identifiers..." 
+                className="w-full text-sm px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-700 transition-all resize-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-mono uppercase tracking-wider text-zinc-500 mb-1.5">Location Found</label>
+                <input 
+                  type="text" 
+                  name="location"
+                  required
+                  placeholder="e.g., LRT Recto Station, Manila" 
+                  className="w-full text-sm px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-700 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono uppercase tracking-wider text-zinc-500 mb-1.5">Date Found</label>
+                <input 
+                  type="date" 
+                  name="date"
+                  required
+                  className="w-full text-sm px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded text-zinc-300 focus:outline-none focus:border-zinc-700 transition-all"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-wider text-zinc-500 mb-1.5">Reference Image</label>
+              <input 
+                type="file" 
+                name="image"
+                accept="image/*"
+                required
+                className="w-full text-xs font-mono border border-zinc-800 rounded p-2 bg-zinc-950 text-zinc-400 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-[11px] file:font-mono file:bg-zinc-800 file:text-zinc-300 cursor-pointer"
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-mono text-xs uppercase tracking-widest py-3 rounded transition-colors disabled:opacity-40 cursor-pointer shadow-sm"
+            >
+              {loading ? "Processing Submission..." : "Submit Report"}
+            </button>
+          </form>
+        </div>
+
+        <div className="lg:col-span-1 space-y-4">
+          <div className="text-xs font-mono text-zinc-500 uppercase tracking-wider">
+            Search Results
+          </div>
           
-          {matches.length === 0 ? (
-            <div className="bg-gray-50 p-6 rounded-lg text-center border border-gray-200">
-              <p className="text-gray-600">No close matches found in the lost database right now. We've logged it in case the owner searches later!</p>
+          {!hasSearched ? (
+            <div className="p-6 rounded-lg border border-zinc-800 bg-zinc-900/40 text-center text-xs font-mono text-zinc-600">
+              Awaiting a report submission to show potential matches.
+            </div>
+          ) : matches.length === 0 ? (
+            <div className="p-6 rounded-lg border border-zinc-800 bg-zinc-900/40 text-center text-xs font-mono text-zinc-400 leading-relaxed">
+              No matching records found. The item has been logged for future searches.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-4">
               {matches.map((match) => (
-                <div key={match.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                  <img src={match.image_url} alt="Lost item match" className="w-full h-48 object-cover" />
-                  <div className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-lg text-gray-900">{match.item_name}</h3>
-                      <span className="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded-full border border-green-200">
-                        {Math.round(match.similarity * 100)}% Match
-                      </span>
+                <div key={match.id} className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden flex flex-col shadow-none">
+                  <div className="h-32 bg-zinc-950 relative border-b border-zinc-800/60">
+                    <img src={match.image_url} alt="Lost link match" className="w-full h-full object-cover" />
+                    <span className="absolute top-2 right-2 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold font-mono px-2 py-0.5 rounded border border-emerald-500/20">
+                      {Math.round(match.similarity * 100)}% Match
+                    </span>
+                  </div>
+                  <div className="p-4 flex flex-col justify-between flex-grow">
+                    <div>
+                      <h4 className="font-semibold text-xs text-white truncate">{match.item_name}</h4>
+                      <p className="text-[11px] text-zinc-400 line-clamp-2 mt-1 leading-relaxed">{match.description}</p>
                     </div>
-                    <p className="text-gray-600 text-sm">{match.description}</p>
                     <a 
-                      href={`mailto:demo-owner@example.com?subject=I found your ${match.item_name}!&body=Hi, I matched with your ${match.item_name} on the Lost Item Finder app. Let's coordinate how to get it back to you!`}
-                      className="w-full mt-4 bg-blue-50 text-blue-600 font-semibold py-2 rounded-md hover:bg-blue-100 transition block text-center"
+                      href={`mailto:owner-relay@node.local?subject=Platform Match Resolution: ${match.item_name}&body=System identified matching vectors for your missing asset reference ID: ${match.id}. Please verify metadata to settle coordinates.`}
+                      className="w-full mt-3 block text-center bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-mono py-2 rounded transition-colors"
                     >
                       Contact Owner
                     </a>
@@ -216,7 +220,9 @@ export default function ReportFoundItem() {
             </div>
           )}
         </div>
-      )}
+
+      </div>
+
     </main>
   );
 }

@@ -1,131 +1,108 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { supabase } from "../../lib/supabase";
+import { useState } from "react";
 
-// Define our data type so TypeScript is happy
-type Item = {
-  id: string;
-  item_name: string;
-  description: string;
-  location: string;
-  date: string;
-  image_url: string;
-  type: "LOST" | "FOUND";
-  created_at: string;
-};
+export default function SimilarityExplore() {
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-export default function ExploreFeed() {
-  const [items, setItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchAllItems() {
-      try {
-        // 1. Fetch all Lost Items
-        const { data: lostData, error: lostError } = await supabase
-          .from("lost_items")
-          .select("*");
-        if (lostError) throw lostError;
-
-        // 2. Fetch all Found Items
-        const { data: foundData, error: foundError } = await supabase
-          .from("found_items")
-          .select("*");
-        if (foundError) throw foundError;
-
-        // 3. Format and tag the Lost Items
-        const formattedLost = (lostData || []).map((item) => ({
-          id: `lost-${item.id}`,
-          item_name: item.item_name,
-          description: item.description,
-          location: item.location_lost,
-          date: item.date_lost,
-          image_url: item.image_url,
-          type: "LOST" as const,
-          created_at: item.created_at || item.date_lost,
-        }));
-
-        // 4. Format and tag the Found Items
-        const formattedFound = (foundData || []).map((item) => ({
-          id: `found-${item.id}`,
-          item_name: item.item_name,
-          description: item.description,
-          location: item.location_found,
-          date: item.date_found,
-          image_url: item.image_url,
-          type: "FOUND" as const,
-          created_at: item.created_at || item.date_found,
-        }));
-
-        // 5. Merge them together and sort by newest first!
-        const allItems = [...formattedLost, ...formattedFound].sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-
-        setItems(allItems);
-      } catch (error) {
-        console.error("Error fetching items:", error);
-      } finally {
-        setLoading(false);
-      }
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImagePreview(URL.createObjectURL(file));
     }
+  };
 
-    fetchAllItems();
-  }, []);
+  const executeVectorSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!imagePreview) return;
+    
+    setIsProcessing(true);
+    // TODO: I-integrate ang actual fetch post body request papunta sa FastAPI endpoint mo rito
+    setTimeout(() => {
+      setIsProcessing(false);
+    }, 2000);
+  };
 
   return (
-    <main className="max-w-6xl mx-auto p-6 mt-10">
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Global Feed</h1>
-          <p className="text-gray-600">Browse all recently lost and found items in the database.</p>
-        </div>
-        <div className="flex gap-4">
-          <a href="/lost" className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
-            + Report Lost
-          </a>
-          <a href="/found" className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition">
-            + Report Found
-          </a>
-        </div>
+    <main className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 p-6 md:p-12 transition-colors duration-200">
+      
+      {/* Structural Page Header */}
+      <div className="mb-8 md:mb-10">
+        <h1 className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white tracking-wide">
+          Similarity Verification
+        </h1>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+          Upload an image to scan and search for matching items across Japan and the Philippines.
+        </p>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-        </div>
-      ) : items.length === 0 ? (
-        <div className="bg-gray-50 p-10 rounded-xl text-center border border-gray-200">
-          <p className="text-gray-500 text-lg">No items have been reported yet.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {items.map((item) => (
-            <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition group">
-              <div className="relative">
+      <div className="w-full max-w-xl">
+        <form onSubmit={executeVectorSearch} className="space-y-6">
+          
+          {/* Industrial Upload Canvas Target Zone */}
+          <div className="relative group flex flex-col items-center justify-center w-full h-64 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-lg overflow-hidden transition-all">
+            {imagePreview ? (
+              <div className="absolute inset-0 w-full h-full bg-zinc-950 flex items-center justify-center">
                 <img 
-                  src={item.image_url} 
-                  alt={item.item_name} 
-                  className="w-full h-48 object-cover group-hover:scale-105 transition duration-300" 
+                  src={imagePreview} 
+                  alt="Upload preview" 
+                  className={`w-full h-full object-contain ${isProcessing ? "opacity-40 animate-pulse" : ""}`}
                 />
-                <div className="absolute top-3 left-3">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm ${
-                    item.type === "LOST" ? "bg-red-500 text-white" : "bg-green-500 text-white"
-                  }`}>
-                    {item.type}
-                  </span>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-zinc-100/50 dark:hover:bg-zinc-800/30 transition-colors p-6 text-center">
+                <div className="text-xs font-mono text-zinc-400 dark:text-zinc-500 tracking-wide uppercase">
+                  [ Click to Upload Image ]
                 </div>
-              </div>
-              <div className="p-4">
-                <h3 className="font-bold text-lg text-gray-900 truncate">{item.item_name}</h3>
-                <p className="text-sm text-gray-500 mb-3">{item.date} • {item.location}</p>
-                <p className="text-gray-600 text-sm line-clamp-2">{item.description}</p>
-              </div>
+                <div className="text-[10px] text-zinc-400 dark:text-zinc-600 font-mono mt-2">
+                  Supported formats: JPEG, PNG
+                </div>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleImageChange} 
+                  className="hidden" 
+                />
+              </label>
+            )}
+          </div>
+
+          {/* Action Call Controls */}
+          {imagePreview && (
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setImagePreview(null)}
+                disabled={isProcessing}
+                className="px-4 py-2 rounded text-xs font-mono border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-500 dark:text-zinc-400 transition-colors disabled:opacity-50"
+              >
+                Clear Image
+              </button>
+              <button
+                type="submit"
+                disabled={isProcessing}
+                className="px-4 py-2 rounded text-xs font-mono font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-white transition-colors shadow-sm disabled:opacity-50"
+              >
+                {isProcessing ? "Scanning Image..." : "Search for Matches"}
+              </button>
             </div>
-          ))}
+          )}
+
+        </form>
+
+        {/* Empty State Vector Results Logs Trace */}
+        <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+          <div className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">
+            Search Results
+          </div>
+          <div className="p-4 rounded border border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/40 text-center text-xs font-mono text-zinc-400 dark:text-zinc-600">
+            {isProcessing ? "Comparing image patterns..." : "Awaiting image upload to start search."}
+          </div>
         </div>
-      )}
+
+      </div>
+
     </main>
   );
 }
